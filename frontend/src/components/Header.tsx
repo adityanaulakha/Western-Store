@@ -109,19 +109,19 @@ export const Header: React.FC = () => {
 
             {/* Brand Logo & Title */}
             <div
-              className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group py-1"
+              className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer select-none group py-1"
               onClick={handleLogoClick}
             >
               <img
                 src={logoImg}
                 alt="The Western Store Logo"
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border border-[#EAE4D9] shadow-xs group-hover:scale-105 transition-transform"
+                className="w-12 h-12 xs:w-13 xs:h-13 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full object-cover border border-[#EAE4D9] shadow-sm group-hover:scale-105 transition-transform shrink-0"
               />
               <div className="shrink-0">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="text-lg xs:text-xl sm:text-2xl font-bold tracking-tight text-[#721B29] transition-colors duration-300"
-                    style={{ fontFamily: "'Great Vibes', cursive", transform: 'translateY(4px)', display: 'inline-block' }}
+                    className="text-xl xs:text-2xl sm:text-3xl font-bold tracking-tight text-[#721B29] transition-colors duration-300"
+                    style={{ fontFamily: "'Great Vibes', cursive", transform: 'translateY(2px)', display: 'inline-block' }}
                   >
                     The Western Store
                   </span>
@@ -239,8 +239,8 @@ export const Header: React.FC = () => {
                 id="header-account-btn"
                 type="button"
                 onClick={() => setAccountMenuOpen(!accountMenuOpen)}
-                className="p-1.5 xs:p-2 sm:p-2.5 text-[#242120] hover:text-[#721B29] hover:bg-[#F3EFE6] transition-colors rounded-full flex items-center gap-1.5 cursor-pointer"
-                aria-label="Account and store manager"
+                className="p-1.5 xs:p-2 sm:p-2.5 text-[#242120] hover:text-[#721B29] hover:bg-[#F3EFE6] transition-colors rounded-full flex items-center justify-center cursor-pointer"
+                aria-label="Account menu"
               >
                 {currentUser?.avatar ? (
                   <img
@@ -250,11 +250,6 @@ export const Header: React.FC = () => {
                   />
                 ) : (
                   <User className="w-4 h-4 xs:w-5 xs:h-5" />
-                )}
-                {currentUser && (
-                  <span className="text-xs font-bold text-[#721B29] hidden xl:inline max-w-[80px] truncate">
-                    {currentUser.name.split(' ')[0]}
-                  </span>
                 )}
               </button>
 
@@ -270,7 +265,9 @@ export const Header: React.FC = () => {
                             {currentUser.isAdmin ? 'Admin' : 'Customer'}
                           </span>
                         </div>
-                        <p className="text-xs font-bold text-[#242120] truncate">{currentUser.name}</p>
+                        <p className="text-xs font-bold text-[#242120] truncate">
+                          {currentUser.isAdmin ? 'Admin' : currentUser.name}
+                        </p>
                         <p className="text-[11px] text-[#736B63] truncate">{currentUser.email}</p>
                       </div>
                     ) : (
@@ -418,7 +415,7 @@ export const Header: React.FC = () => {
                   <img
                     src={logoImg}
                     alt="The Western Store Logo"
-                    className="w-9 h-9 rounded-full object-cover border border-[#EAE4D9] shrink-0"
+                    className="w-12 h-12 rounded-full object-cover border border-[#EAE4D9] shrink-0"
                   />
                   <div>
                     <div className="flex items-center gap-1.5">
@@ -452,7 +449,9 @@ export const Header: React.FC = () => {
                       className="w-7 h-7 rounded-full border border-[#721B29] object-cover shrink-0"
                     />
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-[#242120] truncate">{currentUser.name}</p>
+                      <p className="text-xs font-bold text-[#242120] truncate">
+                        {currentUser.isAdmin ? 'Admin' : currentUser.name}
+                      </p>
                       <p className="text-[10px] text-[#721B29] font-medium truncate">{currentUser.email}</p>
                     </div>
                   </div>

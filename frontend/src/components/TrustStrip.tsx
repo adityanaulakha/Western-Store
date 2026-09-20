@@ -7,22 +7,22 @@ import supportIconLottie from '../gifs/Support icon.lottie';
 
 const HARDCODED_TRUST_FEATURES = [
   {
-    id: 'free-shipping',
-    title: 'Free Shipping',
-    description: 'Free shipping on orders above ₹999',
+    id: 'worldwide-shipping',
+    title: 'WORLDWIDE SHIPPING',
+    description: '(No Cash On Delivery)',
     lottie: shoppingCartLottie,
   },
   {
-    id: 'flexible-payment',
-    title: 'Flexible Payment',
-    description: 'Multiple payment options available',
-    lottie: walletLottie,
+    id: 'no-returns',
+    title: 'NO RETURN / NO EXCHANGE',
+    description: '(No Refunds)',
+    lottie: supportIconLottie,
   },
   {
-    id: 'premium-support',
-    title: 'Premium Support',
-    description: '24/7 customer support',
-    lottie: supportIconLottie,
+    id: 'secure-payment',
+    title: 'SECURE PAYMENT',
+    description: '(We accept Debit/Credit Card and UPI Payments)',
+    lottie: walletLottie,
   },
 ];
 
@@ -90,9 +90,11 @@ export const TrustStrip: React.FC = () => {
               </h3>
 
               {/* Subtitle / Description */}
-              <p className="text-xs sm:text-sm text-[#736B63] mt-1.5 font-light leading-relaxed max-w-xs">
-                {tf.description}
-              </p>
+              {tf.description ? (
+                <p className="text-xs sm:text-sm text-[#736B63] mt-1.5 font-light leading-relaxed max-w-xs">
+                  {tf.description}
+                </p>
+              ) : null}
             </motion.div>
           ))}
         </motion.div>

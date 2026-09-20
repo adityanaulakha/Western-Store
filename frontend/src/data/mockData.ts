@@ -9,6 +9,7 @@ export const STORE_INFO = {
   whatsappNumber: '919729515288',
   instagram: '@the_western_store_kkr',
   instagramUrl: 'https://instagram.com/the_western_store_kkr',
+  instagramGlamifyUrl: 'https://www.instagram.com/the_western_store_glamify?stkn=ZDNlZDc0MzIxNw==',
   email: 'thewesternstorekkr@gmail.com',
   announcement: 'Worldwide Shipping | 📲 9729515288 | DM us on Instagram @the_western_store_kkr to Order',
   operatingHours: '10:30 AM – 9:00 PM (Mon-Sun)',
@@ -387,21 +388,21 @@ export const INITIAL_BUDGET_TILES: BudgetTileConfig[] = [
 export const INITIAL_TRUST_FEATURES: TrustFeatureConfig[] = [
   {
     id: 'tf-1',
-    title: 'Free Shipping',
-    description: 'Free shipping on orders above ₹999',
+    title: 'WORLDWIDE SHIPPING',
+    description: '(No Cash On Delivery)',
     iconType: 'cart',
   },
   {
     id: 'tf-2',
-    title: 'Flexible Payment',
-    description: 'Multiple payment options available',
-    iconType: 'wallet',
+    title: 'NO RETURN / NO EXCHANGE',
+    description: '(No Refunds)',
+    iconType: 'support',
   },
   {
     id: 'tf-3',
-    title: 'Premium Support',
-    description: '24/7 customer support',
-    iconType: 'support',
+    title: 'SECURE PAYMENT',
+    description: '(We accept Debit/Credit Card and UPI Payments)',
+    iconType: 'wallet',
   },
 ];
 

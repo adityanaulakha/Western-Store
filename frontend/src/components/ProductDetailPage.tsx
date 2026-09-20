@@ -31,6 +31,7 @@ import {
   Plus,
   X,
   Filter,
+  Instagram,
 } from 'lucide-react';
 
 interface ReviewItem {
@@ -174,6 +175,74 @@ export const ProductDetailPage: React.FC = () => {
   // Share link feedback state
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Image Navigation & Swipe Handlers
+  const handlePrevImage = () => {
+    if (!product.images || product.images.length <= 1) return;
+    setSelectedImageIdx((prev) => (prev - 1 + product.images.length) % product.images.length);
+  };
+
+  const handleNextImage = () => {
+    if (!product.images || product.images.length <= 1) return;
+    setSelectedImageIdx((prev) => (prev + 1) % product.images.length);
+  };
+
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isPointerDown = useRef(false);
+
+  const handleGalleryTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    if ('touches' in e) {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+    } else {
+      touchStartX.current = e.clientX;
+      touchStartY.current = e.clientY;
+      isPointerDown.current = true;
+    }
+  };
+
+  const handleGalleryTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
+    if (touchStartX.current === null) return;
+    let endX = 0;
+    let endY = 0;
+    if ('changedTouches' in e) {
+      endX = e.changedTouches[0].clientX;
+      endY = e.changedTouches[0].clientY;
+    } else {
+      if (!isPointerDown.current) return;
+      endX = e.clientX;
+      endY = e.clientY;
+      isPointerDown.current = false;
+    }
+
+    const diffX = endX - touchStartX.current;
+    const diffY = endY - (touchStartY.current || 0);
+
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        handleNextImage();
+      } else {
+        handlePrevImage();
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  // Keyboard arrow navigation for desktop/laptop
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [product.images]);
+
   // Accordions (closed by default)
   const [accordionOpen, setAccordionOpen] = useState<{ fabric: boolean; returnPolicy: boolean; shipping: boolean; care: boolean }>({
     fabric: false,
@@ -207,11 +276,6 @@ export const ProductDetailPage: React.FC = () => {
 
   const shareFacebook = () => {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`, '_blank');
-  };
-
-  const shareTwitter = () => {
-    const text = `${shareTitle} ₹${product.price.toLocaleString('en-IN')}`;
-    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const copyProductLink = () => {
@@ -389,16 +453,63 @@ export const ProductDetailPage: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Main Stage Image */}
-                  <div className="flex-1 relative aspect-[3/4] w-full max-w-[440px] rounded-xl overflow-hidden bg-[#F4EFE6] border border-[#EAE4D9] shadow-sm">
+                  {/* Main Stage Image with Swipe & Arrow Navigation */}
+                  <div
+                    onTouchStart={handleGalleryTouchStart}
+                    onTouchEnd={handleGalleryTouchEnd}
+                    onMouseDown={handleGalleryTouchStart}
+                    onMouseUp={handleGalleryTouchEnd}
+                    className="flex-1 relative aspect-[3/4] w-full max-w-[440px] rounded-xl overflow-hidden bg-[#F4EFE6] border border-[#EAE4D9] shadow-sm select-none group touch-pan-y"
+                  >
                     <img
                       src={getOptimizedImageUrl(product.images[selectedImageIdx] || product.images[0], 1200, 85)}
                       alt={product.title}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = FALLBACK_PRODUCT_IMAGE;
                       }}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover object-top pointer-events-none transition-transform duration-300"
                     />
+
+                    {/* Left & Right Arrow Navigation Controls */}
+                    {product.images && product.images.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePrevImage();
+                          }}
+                          className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/85 hover:bg-white text-[#242120] hover:text-[#721B29] flex items-center justify-center backdrop-blur-md shadow-md hover:shadow-lg transition-all z-20 cursor-pointer opacity-90 sm:opacity-0 group-hover:opacity-100 hover:scale-105"
+                          aria-label="Previous image"
+                        >
+                          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNextImage();
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/85 hover:bg-white text-[#242120] hover:text-[#721B29] flex items-center justify-center backdrop-blur-md shadow-md hover:shadow-lg transition-all z-20 cursor-pointer opacity-90 sm:opacity-0 group-hover:opacity-100 hover:scale-105"
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+
+                        {/* Mobile Swipe Pagination Dots Indicator */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-full sm:hidden pointer-events-none">
+                          {product.images.map((_, idx) => (
+                            <span
+                              key={idx}
+                              className={`h-1.5 rounded-full transition-all ${
+                                selectedImageIdx === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
 
                     {/* Badges */}
                     <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
@@ -833,6 +944,18 @@ export const ProductDetailPage: React.FC = () => {
                         <span>WhatsApp</span>
                       </button>
 
+                      {/* Instagram */}
+                      <a
+                        href={STORE_INFO.instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-[#E1306C]/10 text-[#C13584] hover:bg-[#E1306C]/20 font-medium text-xs rounded border border-[#E1306C]/30 transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="View on Instagram"
+                      >
+                        <Instagram className="w-3.5 h-3.5 text-[#C13584]" />
+                        <span>Instagram</span>
+                      </a>
+
                       {/* Facebook */}
                       <button
                         type="button"
@@ -844,19 +967,6 @@ export const ProductDetailPage: React.FC = () => {
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                         </svg>
                         <span>Facebook</span>
-                      </button>
-
-                      {/* Twitter / X */}
-                      <button
-                        type="button"
-                        onClick={shareTwitter}
-                        className="px-3 py-1.5 bg-black/5 text-[#242120] hover:bg-black/10 font-medium text-xs rounded border border-black/15 transition-colors flex items-center gap-1.5 cursor-pointer"
-                        title="Share on Twitter / X"
-                      >
-                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                        <span>X (Twitter)</span>
                       </button>
 
                       {/* Copy Link */}

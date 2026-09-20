@@ -207,16 +207,29 @@ export const InstagramFeed: React.FC = () => {
             </p>
           </div>
 
-          <a
-            href={STORE_INFO.instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 px-6 py-3 bg-[#721B29] hover:bg-[#59141F] text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all self-start md:self-auto shrink-0 active:scale-95"
-          >
-            <Instagram className="w-4 h-4 text-white" />
-            <span>Follow {instagramHandle || '@the_western_store_kkr'}</span>
-            <ExternalLink className="w-3.5 h-3.5 ml-0.5 opacity-80" />
-          </a>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 self-start md:self-auto shrink-0">
+            <a
+              href={STORE_INFO.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-[#721B29] hover:bg-[#59141F] text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"
+            >
+              <Instagram className="w-4 h-4 text-white" />
+              <span>Follow {instagramHandle || '@the_western_store_kkr'}</span>
+              <ExternalLink className="w-3.5 h-3.5 ml-0.5 opacity-80" />
+            </a>
+
+            <a
+              href={STORE_INFO.instagramGlamifyUrl || 'https://www.instagram.com/the_western_store_glamify?stkn=ZDNlZDc0MzIxNw=='}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-[#FAF0E1] hover:bg-[#F3E3CC] text-[#721B29] border border-[#E2D2BC] text-xs font-bold rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95"
+            >
+              <Instagram className="w-4 h-4 text-[#721B29]" />
+              <span>Follow @the_western_store_glamify</span>
+              <ExternalLink className="w-3.5 h-3.5 ml-0.5 opacity-80" />
+            </a>
+          </div>
         </div>
 
         {/* Video Reels Grid (Vertical 9:16 Auto-Play Muted Smartphone Showcase) */}

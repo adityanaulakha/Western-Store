@@ -110,7 +110,7 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
       success: true,
       user: {
         id: 'admin_tws_1',
-        name: 'Boutique Manager',
+        name: 'Admin',
         email: expectedEmail,
         authProvider: 'admin',
         isAdmin: true,

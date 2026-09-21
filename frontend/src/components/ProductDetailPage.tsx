@@ -621,9 +621,16 @@ export const ProductDetailPage: React.FC = () => {
                             ) : (
                               <>
                                 <p>• Please double-check your sizing using our size guide or message our store stylist on WhatsApp before confirming your order.</p>
-                                <p>• Every piece undergoes a rigorous 3-point quality check at our Railway Road store prior to dispatch to ensure pristine craftsmanship.</p>
+                                <p>• Every piece undergoes a rigorous quality check at our store prior to dispatch to ensure pristine craftsmanship.</p>
                               </>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => setView('policy-returns')}
+                              className="text-[11px] font-bold text-[#721B29] underline hover:text-[#52131D] inline-flex items-center gap-1 pt-1"
+                            >
+                              <span>Read Full Defect Claims & Store Policies →</span>
+                            </button>
                           </div>
                         </motion.div>
                       )}
@@ -1079,9 +1086,16 @@ export const ProductDetailPage: React.FC = () => {
                               ) : (
                                 <>
                                   <p>• Please double-check your sizing using our size guide or message our store stylist on WhatsApp before confirming your order.</p>
-                                  <p>• Every piece undergoes a rigorous 3-point quality check at our Railway Road store prior to dispatch to ensure pristine craftsmanship.</p>
+                                  <p>• Every piece undergoes a rigorous quality check at our store prior to dispatch to ensure pristine craftsmanship.</p>
                                 </>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => setView('policy-returns')}
+                                className="text-[11px] font-bold text-[#721B29] underline hover:text-[#52131D] inline-flex items-center gap-1 pt-1"
+                              >
+                                <span>Read Full Defect Claims & Store Policies →</span>
+                              </button>
                             </div>
                           </motion.div>
                         )}

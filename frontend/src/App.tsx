@@ -19,6 +19,7 @@ import { WishlistPage } from './components/WishlistPage';
 import { OrderTrackingPage } from './components/OrderTrackingPage';
 import { OrderHistoryPage } from './components/OrderHistoryPage';
 import { ContactPage } from './components/ContactPage';
+import { PolicyPage } from './components/PolicyPage';
 const AdminPanel = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 import { CartDrawer } from './components/CartDrawer';
 import { WhatsAppCheckoutModal } from './components/WhatsAppCheckoutModal';
@@ -202,6 +203,10 @@ const StorefrontContent: React.FC = () => {
             {currentView === 'track-order' && <OrderTrackingPage />}
             {currentView === 'order-history' && <OrderHistoryPage />}
             {currentView === 'contact' && <ContactPage />}
+            {(currentView === 'policy-returns' ||
+              currentView === 'policy-shipping' ||
+              currentView === 'policy-terms' ||
+              currentView === 'policy-privacy') && <PolicyPage />}
           </motion.div>
         </AnimatePresence>
       </main>

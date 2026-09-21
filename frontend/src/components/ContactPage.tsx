@@ -31,20 +31,20 @@ export const ContactPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       {/* Hero Banner */}
-      <div className="relative bg-[#1C1717] overflow-hidden">
+      <div className="relative bg-gradient-to-b from-[#F6F0E6] via-[#EFE5D5] to-[#FDFBF7] border-b border-[#E3D6C5] overflow-hidden">
         <div
-          className="absolute inset-0 opacity-20"
+          className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
             backgroundImage:
-              'repeating-linear-gradient(45deg, #721B29 0px, #721B29 1px, transparent 1px, transparent 12px)',
+              'radial-gradient(circle at 50% 0%, rgba(230,194,128,0.4) 0%, transparent 65%)',
           }}
         />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-8 py-20 sm:py-28 text-center">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-8 py-16 sm:py-24 text-center">
           <motion.span
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-block text-[11px] font-bold uppercase tracking-widest text-[#E6C280] bg-[#E6C280]/15 px-4 py-1.5 rounded-full border border-[#E6C280]/30 mb-5"
+            className="inline-block text-[11px] font-bold uppercase tracking-widest text-[#721B29] bg-[#721B29]/10 px-4 py-1.5 rounded-full border border-[#721B29]/20 mb-4 shadow-xs"
           >
             Reach Out
           </motion.span>
@@ -52,7 +52,7 @@ export const ContactPage: React.FC = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight mb-4"
+            className="font-serif text-3xl sm:text-5xl font-bold text-[#241C1D] tracking-tight mb-3"
           >
             Contact Us
           </motion.h1>
@@ -60,7 +60,7 @@ export const ContactPage: React.FC = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-sm sm:text-base text-[#B5ABA0] max-w-xl mx-auto font-light leading-relaxed"
+            className="text-sm sm:text-base text-[#6B5E50] max-w-xl mx-auto font-light leading-relaxed"
           >
             We'd love to hear from you — whether it's a question about an outfit, a bulk order, or just saying hi.
           </motion.p>

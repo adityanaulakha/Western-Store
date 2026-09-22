@@ -22,22 +22,6 @@ export const STORE_INFO = {
       hours: '10:30 AM – 9:00 PM',
       mapUrl: 'https://maps.google.com/?q=The+Western+Store+Kurukshetra',
     },
-    {
-      id: 'loc-2',
-      name: 'Karnal Store',
-      address: 'Opp. City Mall, Main Model Town Road, Karnal - 132001, Haryana',
-      phone: '+91 97295 15288',
-      hours: '10:30 AM – 9:00 PM',
-      mapUrl: 'https://maps.google.com/?q=The+Western+Store+Karnal',
-    },
-    {
-      id: 'loc-3',
-      name: 'Ambala Cantt Store',
-      address: 'Near Sadar Bazaar Chowk, Nicholson Road, Ambala Cantt - 133001, Haryana',
-      phone: '+91 97295 15288',
-      hours: '10:30 AM – 9:00 PM',
-      mapUrl: 'https://maps.google.com/?q=The+Western+Store+Ambala',
-    },
   ],
 };
 

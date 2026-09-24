@@ -270,6 +270,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   // heroSlides always starts empty — Supabase is the single source of truth.
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
+  // Tombstone set: IDs that were explicitly deleted locally. Used to guard
+  // against stale realtime events or re-fetches restoring a deleted slide.
+  const deletedSlideIds = useRef<Set<string>>(new Set());
 
   const [announcementText, setAnnouncementText] = useState<string>(() => {
     return localStorage.getItem('tws_announcement') || STORE_INFO.announcement;
@@ -476,7 +479,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const deleteHeroSlide = (id: string) => {
-    setHeroSlides((prev) => prev.filter((slide) => slide.id !== id));
+    // Mark as deleted so stale realtime / re-fetch events can't restore it.
+    deletedSlideIds.current.add(id);
+    // Auto-clear the tombstone after 15 s — enough time for all in-flight saves
+    // to resolve and their realtime events to arrive.
+    setTimeout(() => deletedSlideIds.current.delete(id), 15_000);
+
+    const updated = heroSlides.filter((slide) => slide.id !== id);
+    setHeroSlides(updated);
+    // Save unconditionally — without the isInitialSettingsSyncDone guard — so
+    // a delete made shortly after mount is never silently dropped.
+    saveStoreSettingToSupabase('hero_slides', updated).catch(() => {});
   };
 
   const resetHeroSlides = () => {
@@ -764,7 +777,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setInstagramPosts(settings.instagram_posts);
         }
         if (settings.hero_slides !== undefined && Array.isArray(settings.hero_slides)) {
-          setHeroSlides(settings.hero_slides);
+          // Filter out any IDs that were explicitly deleted in this session.
+          const filtered = (settings.hero_slides as HeroSlide[]).filter(
+            (s) => !deletedSlideIds.current.has(s.id)
+          );
+          setHeroSlides(filtered);
         }
         if (settings.testimonials && Array.isArray(settings.testimonials) && settings.testimonials.length > 0) {
           setTestimonials(settings.testimonials);
@@ -835,7 +852,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (key === 'instagram_posts' && Array.isArray(val)) {
               setInstagramPosts(val);
             } else if (key === 'hero_slides' && Array.isArray(val)) {
-              setHeroSlides(val);
+              // Filter out tombstoned IDs so a stale concurrent save can't
+              // undo a deletion the user just performed.
+              const filtered = (val as HeroSlide[]).filter(
+                (s) => !deletedSlideIds.current.has(s.id)
+              );
+              setHeroSlides(filtered);
             } else if (key === 'testimonials' && Array.isArray(val)) {
               setTestimonials(val);
             } else if (key === 'home_sections' && Array.isArray(val)) {

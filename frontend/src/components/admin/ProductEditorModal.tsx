@@ -21,6 +21,9 @@ import {
   Edit2,
   User,
   HardDrive,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
 } from 'lucide-react';
 
 interface ProductEditorModalProps {
@@ -220,7 +223,10 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
     }
   };
 
-  // Image helpers
+  // Image helpers & reordering state (local UI preview, persists only upon clicking Save)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   const handleAddImage = (url: string) => {
     if (!url.trim()) return;
     setImages((prev) => [...prev, url.trim()]);
@@ -237,6 +243,44 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
     const target = images[index];
     const rest = images.filter((_, i) => i !== index);
     setImages([target, ...rest]);
+  };
+
+  const handleMoveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= images.length || fromIndex === toIndex) return;
+    setImages((prev) => {
+      const updated = [...prev];
+      const [item] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, item);
+      return updated;
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      handleMoveImage(draggedIndex, dropIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Size helpers
@@ -684,65 +728,157 @@ export const ProductEditorModal: React.FC<ProductEditorModalProps> = ({
             {/* TAB 2: IMAGES GALLERY */}
             {modalTab === 'images' && (
               <div className="space-y-5 animate-in fade-in duration-200">
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#242120] mb-1">
-                    Garment Photo Gallery
-                  </h4>
-                  <p className="text-xs text-[#736B63]">
-                    The first image is the main cover photo in listings. You can reorder, set primary, or remove photos.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#EAE4D9]">
+                  <div>
+                    <h4 className="font-serif font-bold text-sm text-[#242120] mb-0.5">
+                      Garment Photo Gallery ({images.length} {images.length === 1 ? 'photo' : 'photos'})
+                    </h4>
+                    <p className="text-xs text-[#736B63]">
+                      Drag and drop cards or use the <strong>← / →</strong> arrows to rearrange photo order. The <strong>#1 Primary Cover</strong> photo is displayed in catalog listings.
+                    </p>
+                  </div>
+                  {images.length > 1 && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#721B29] bg-[#721B29]/10 px-3 py-1 rounded-full w-fit">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Reorder on UI • Click Save to persist</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Current Images Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {images.map((img, idx) => (
-                    <div
-                      key={`${img}-${idx}`}
-                      className={`relative rounded-xl border-2 overflow-hidden bg-white group ${
-                        idx === 0 ? 'border-[#721B29] ring-2 ring-[#721B29]/20' : 'border-[#EAE4D9]'
-                      }`}
-                    >
-                      <div className="aspect-[3/4] w-full overflow-hidden bg-[#FAF8F3]">
-                        <img
-                          src={getOptimizedImageUrl(img, 300, 80)}
-                          alt={`Product ${idx + 1}`}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = FALLBACK_PRODUCT_IMAGE;
-                          }}
-                          className="w-full h-full object-cover object-top"
-                        />
-                      </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                  {images.map((img, idx) => {
+                    const isDragging = draggedIndex === idx;
+                    const isOver = dragOverIndex === idx && draggedIndex !== idx;
+                    const isCover = idx === 0;
 
-                      {/* Cover Badge */}
-                      {idx === 0 && (
-                        <span className="absolute top-2 left-2 bg-[#721B29] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-                          Primary Cover
-                        </span>
-                      )}
+                    return (
+                      <div
+                        key={`${img}-${idx}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        onDragEnd={handleDragEnd}
+                        className={`relative rounded-xl border-2 overflow-hidden bg-white group flex flex-col transition-all duration-150 cursor-grab active:cursor-grabbing ${
+                          isDragging
+                            ? 'opacity-40 scale-95 border-dashed border-[#721B29]'
+                            : isOver
+                            ? 'ring-2 ring-[#721B29] border-[#721B29] scale-[1.02] shadow-md'
+                            : isCover
+                            ? 'border-[#721B29] ring-2 ring-[#721B29]/20 shadow-xs'
+                            : 'border-[#EAE4D9] hover:border-[#D9CEBF] hover:shadow-sm'
+                        }`}
+                      >
+                        {/* Position Badge */}
+                        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 pointer-events-none">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 ${
+                              isCover
+                                ? 'bg-[#721B29] text-white'
+                                : 'bg-black/70 text-white backdrop-blur-xs'
+                            }`}
+                          >
+                            {isCover ? (
+                              <>
+                                <Star className="w-2.5 h-2.5 fill-current" />
+                                <span>#1 Cover</span>
+                              </>
+                            ) : (
+                              <span>#{idx + 1}</span>
+                            )}
+                          </span>
+                        </div>
 
-                      {/* Action buttons overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
-                        {idx !== 0 && (
+                        {/* Drag Handle Icon */}
+                        <div className="absolute top-2 right-2 z-10 bg-black/55 text-white rounded-md p-1 opacity-70 group-hover:opacity-100 transition-opacity backdrop-blur-xs">
+                          <GripVertical className="w-3.5 h-3.5" />
+                        </div>
+
+                        {/* Image Preview */}
+                        <div className="aspect-[3/4] w-full overflow-hidden bg-[#FAF8F3] relative">
+                          <img
+                            src={getOptimizedImageUrl(img, 300, 80)}
+                            alt={`Product photo ${idx + 1}`}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = FALLBACK_PRODUCT_IMAGE;
+                            }}
+                            className="w-full h-full object-cover object-top select-none pointer-events-none"
+                          />
+                        </div>
+
+                        {/* Reordering Controls Bar */}
+                        <div className="p-1.5 bg-[#FAF8F3] border-t border-[#EAE4D9] flex items-center justify-between gap-1">
+                          {/* Move Left */}
                           <button
                             type="button"
-                            onClick={() => handleMakeCoverImage(idx)}
-                            className="p-1.5 bg-white text-[#721B29] hover:bg-[#FAF8F3] rounded-full text-xs font-semibold shadow-md flex items-center gap-1 cursor-pointer"
-                            title="Set as Main Cover"
+                            disabled={idx === 0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveImage(idx, idx - 1);
+                            }}
+                            className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                              idx === 0
+                                ? 'text-[#D0C8BD] cursor-not-allowed opacity-30'
+                                : 'text-[#736B63] hover:text-[#721B29] hover:bg-white active:scale-95 shadow-2xs'
+                            }`}
+                            title={idx === 0 ? 'Already first photo' : 'Move Left / Up'}
                           >
-                            <Star className="w-3.5 h-3.5 fill-[#721B29]" />
+                            <ChevronLeft className="w-4 h-4" />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-full text-xs shadow-md cursor-pointer"
-                          title="Delete Image"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                          {/* Set as Cover button */}
+                          {!isCover ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMakeCoverImage(idx);
+                              }}
+                              className="px-2 py-0.5 bg-white border border-[#D9CEBF] hover:border-[#721B29] text-[#721B29] rounded text-[10px] font-semibold flex items-center gap-1 shadow-2xs hover:bg-[#721B29] hover:text-white transition-colors cursor-pointer"
+                              title="Set as Main Cover Photo"
+                            >
+                              <Star className="w-3 h-3" />
+                              <span>Cover</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-bold text-[#721B29] px-1">Primary</span>
+                          )}
+
+                          {/* Move Right */}
+                          <button
+                            type="button"
+                            disabled={idx === images.length - 1}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveImage(idx, idx + 1);
+                            }}
+                            className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                              idx === images.length - 1
+                                ? 'text-[#D0C8BD] cursor-not-allowed opacity-30'
+                                : 'text-[#736B63] hover:text-[#721B29] hover:bg-white active:scale-95 shadow-2xs'
+                            }`}
+                            title={idx === images.length - 1 ? 'Already last photo' : 'Move Right / Down'}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+
+                          {/* Delete Photo */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveImage(idx);
+                            }}
+                            className="p-1 text-[#736B63] hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                            title="Remove Photo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {images.length === 0 && (

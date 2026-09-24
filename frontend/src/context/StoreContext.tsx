@@ -80,6 +80,7 @@ interface StoreContextType {
   updateHeroSlide: (id: string, updates: Partial<HeroSlide>) => void;
   addHeroSlide: (slide: Omit<HeroSlide, 'id'>) => void;
   deleteHeroSlide: (id: string) => void;
+  reorderHeroSlides: (id: string, directionOrTargetId: 'up' | 'down' | string) => void;
   resetHeroSlides: () => void;
 
   announcementText: string;
@@ -366,9 +367,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const isInitialSettingsSyncDone = useRef(false);
 
   useEffect(() => {
-    if (isInitialSettingsSyncDone.current && isSupabaseConfigured()) {
+    if (!isInitialSettingsSyncDone.current || !isSupabaseConfigured()) return;
+    const timer = setTimeout(() => {
       saveStoreSettingToSupabase('hero_slides', heroSlides).catch(() => {});
-    }
+    }, 350);
+    return () => clearTimeout(timer);
   }, [heroSlides]);
 
   useEffect(() => {
@@ -490,6 +493,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Save unconditionally — without the isInitialSettingsSyncDone guard — so
     // a delete made shortly after mount is never silently dropped.
     saveStoreSettingToSupabase('hero_slides', updated).catch(() => {});
+  };
+
+  const reorderHeroSlides = (id: string, directionOrTargetId: 'up' | 'down' | string) => {
+    setHeroSlides((prev) => {
+      const idx = prev.findIndex((s) => s.id === id);
+      if (idx === -1) return prev;
+
+      let targetIdx = -1;
+      if (directionOrTargetId === 'up') {
+        if (idx === 0) return prev;
+        targetIdx = idx - 1;
+      } else if (directionOrTargetId === 'down') {
+        if (idx === prev.length - 1) return prev;
+        targetIdx = idx + 1;
+      } else {
+        targetIdx = prev.findIndex((s) => s.id === directionOrTargetId);
+        if (targetIdx === -1 || targetIdx === idx) return prev;
+      }
+
+      const copy = [...prev];
+      const temp = copy[idx];
+      copy[idx] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
   };
 
   const resetHeroSlides = () => {
@@ -850,28 +878,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (!key || val === undefined) return;
 
             if (key === 'instagram_posts' && Array.isArray(val)) {
-              setInstagramPosts(val);
+              setInstagramPosts((prev) => JSON.stringify(prev) === JSON.stringify(val) ? prev : val);
             } else if (key === 'hero_slides' && Array.isArray(val)) {
               // Filter out tombstoned IDs so a stale concurrent save can't
               // undo a deletion the user just performed.
               const filtered = (val as HeroSlide[]).filter(
                 (s) => !deletedSlideIds.current.has(s.id)
               );
-              setHeroSlides(filtered);
+              setHeroSlides((prev) => JSON.stringify(prev) === JSON.stringify(filtered) ? prev : filtered);
             } else if (key === 'testimonials' && Array.isArray(val)) {
-              setTestimonials(val);
+              setTestimonials((prev) => JSON.stringify(prev) === JSON.stringify(val) ? prev : val);
             } else if (key === 'home_sections' && Array.isArray(val)) {
-              setHomeSections(val);
+              setHomeSections((prev) => JSON.stringify(prev) === JSON.stringify(val) ? prev : val);
             } else if (key === 'budget_tiles' && Array.isArray(val)) {
-              setBudgetTiles(val);
+              setBudgetTiles((prev) => JSON.stringify(prev) === JSON.stringify(val) ? prev : val);
             } else if (key === 'trust_features' && Array.isArray(val)) {
-              setTrustFeatures(val);
+              setTrustFeatures((prev) => JSON.stringify(prev) === JSON.stringify(val) ? prev : val);
             } else if (key === 'announcement_text' && typeof val === 'string') {
-              setAnnouncementText(val);
+              setAnnouncementText((prev) => prev === val ? prev : val);
             } else if (key === 'instagram_handle' && typeof val === 'string') {
-              setInstagramHandle(val);
+              setInstagramHandle((prev) => prev === val ? prev : val);
             } else if (key === 'collection_filters' && typeof val === 'object') {
-              setCollectionFilters(val);
+              setCollectionFilters((prev) => JSON.stringify(prev) === JSON.stringify(val) ? prev : val);
             }
           }
         )
@@ -1549,6 +1577,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateHeroSlide,
         addHeroSlide,
         deleteHeroSlide,
+        reorderHeroSlides,
         resetHeroSlides,
         announcementText,
         setAnnouncementText,

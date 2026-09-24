@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useId } from 'react';
 import { Upload, Loader2, CheckCircle2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { compressAndResizeImage } from '../../utils/imageUtils';
 
 interface ImageKitUploaderProps {
   onUploadSuccess: (url: string) => void;
@@ -23,6 +24,7 @@ export const ImageKitUploader: React.FC<ImageKitUploaderProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uniqueInputId = useId();
 
   const resolvedAccept = accept || (folder.includes('video') ? 'video/*' : 'image/*');
 
@@ -37,8 +39,11 @@ export const ImageKitUploader: React.FC<ImageKitUploaderProps> = ({
     setProgress(15);
 
     try {
-      // Upload the original file directly — no client-side compression or resizing
-      const file = rawFile;
+      // Resize & optimize high-res camera photos before upload so they never exceed ImageKit MP limits
+      let file = rawFile;
+      if (rawFile.type.startsWith('image/')) {
+        file = await compressAndResizeImage(rawFile, 2560, 2560, 0.92);
+      }
       setProgress(30);
 
       const adminSecretToUse =
@@ -123,12 +128,12 @@ export const ImageKitUploader: React.FC<ImageKitUploaderProps> = ({
         accept={resolvedAccept}
         onChange={handleFileChange}
         className="hidden"
-        id={`imagekit-file-input-${folder.replace(/[^a-zA-Z0-9]/g, '')}`}
+        id={uniqueInputId}
       />
 
       <div className="flex items-center gap-3">
         <label
-          htmlFor={`imagekit-file-input-${folder.replace(/[^a-zA-Z0-9]/g, '')}`}
+          htmlFor={uniqueInputId}
           className={`px-3.5 py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all border ${
             isUploading
               ? 'bg-[#EAE4D9] text-[#736B63] border-[#D9CEBF] cursor-not-allowed'

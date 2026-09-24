@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useStore } from '../context/StoreContext';
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getOptimizedImageUrl } from '../utils/imageUtils';
 
 export const HeroCarousel: React.FC = () => {
   const { heroSlides, navigateToCategory, navigateToPlp } = useStore();
@@ -167,8 +168,10 @@ export const HeroCarousel: React.FC = () => {
       {activeSlides.map((slide, index) => {
         const isCurrent = index === currentSlide;
         // Resolve correct images per device target
-        const desktopImg = slide.desktopImage || slide.image;
-        const mobileImg = slide.mobileImage || slide.image || slide.desktopImage;
+        const rawDesktop = slide.desktopImage || slide.image || slide.mobileImage;
+        const rawMobile = slide.mobileImage || slide.image || slide.desktopImage;
+        const desktopImg = getOptimizedImageUrl(rawDesktop, 2560, 92);
+        const mobileImg = getOptimizedImageUrl(rawMobile, 1440, 92);
 
         return (
           <div

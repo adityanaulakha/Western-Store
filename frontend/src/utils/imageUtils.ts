@@ -27,12 +27,16 @@ export function getOptimizedImageUrl(
 
   const cleanUrl = url.trim();
 
-  // 1. ImageKit CDN URL — strip any existing tr: transformation segment
-  //    so the original uploaded file is served without re-encoding.
+  // 1. ImageKit CDN URL — ensure transformation parameters so ImageKit's 25MP limit is never hit
   if (cleanUrl.includes('ik.imagekit.io')) {
     try {
-      // Remove a /tr:... segment anywhere in the path
-      return cleanUrl.replace(/\/tr:[^/]+/, '');
+      if (cleanUrl.includes('tr=') || cleanUrl.includes('/tr:')) {
+        return cleanUrl;
+      }
+      const targetWidth = Math.min(width || 2048, 2560);
+      const targetQuality = Math.min(quality || 90, 95);
+      const separator = cleanUrl.includes('?') ? '&' : '?';
+      return `${cleanUrl}${separator}tr=w-${targetWidth},q-${targetQuality}`;
     } catch {
       return cleanUrl;
     }

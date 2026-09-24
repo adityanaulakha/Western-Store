@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { useStore } from '../../context/StoreContext';
 import { HomeSectionConfig, HomeSectionType, HeroSlide, Testimonial, InstagramPost, BudgetTier } from '../../types';
 import { ImageKitUploader } from './ImageKitUploader';
 import { ImageKitMediaLibraryModal } from './ImageKitMediaLibraryModal';
 import { SupabaseVideoLibraryModal } from './SupabaseVideoLibraryModal';
+import { getOptimizedImageUrl } from '../../utils/imageUtils';
 import {
   Plus,
   Trash2,
@@ -63,6 +65,7 @@ export const HomepageSectionsManager: React.FC = () => {
     updateHeroSlide,
     addHeroSlide,
     deleteHeroSlide,
+    reorderHeroSlides,
     resetHeroSlides,
     announcementText,
     setAnnouncementText,
@@ -146,7 +149,7 @@ export const HomepageSectionsManager: React.FC = () => {
       const chosenUrl = urls[0];
       if (heroTargetMedia.slideId) {
         if (heroTargetMedia.field === 'mobileImage') {
-          updateHeroSlide(heroTargetMedia.slideId, { mobileImage: chosenUrl });
+          updateHeroSlide(heroTargetMedia.slideId, { mobileImage: chosenUrl, image: chosenUrl });
           showToast('Updated Mobile banner!');
         } else {
           updateHeroSlide(heroTargetMedia.slideId, { desktopImage: chosenUrl, image: chosenUrl });
@@ -154,7 +157,7 @@ export const HomepageSectionsManager: React.FC = () => {
         }
       } else {
         if (heroTargetMedia.field === 'mobileImage') {
-          setNewSlide((prev) => ({ ...prev, mobileImage: chosenUrl }));
+          setNewSlide((prev) => ({ ...prev, mobileImage: chosenUrl, image: prev.image || chosenUrl }));
           showToast('Attached Mobile banner!');
         } else {
           setNewSlide((prev) => ({ ...prev, desktopImage: chosenUrl, image: chosenUrl }));
@@ -250,14 +253,13 @@ export const HomepageSectionsManager: React.FC = () => {
     // Set fallback image correctly per device target
     const primaryImg =
       td === 'mobile'
-        ? newSlide.mobileImage
-        : newSlide.desktopImage || newSlide.mobileImage;
+        ? newSlide.mobileImage || newSlide.image || newSlide.desktopImage
+        : newSlide.desktopImage || newSlide.image || newSlide.mobileImage;
 
     addHeroSlide({
       image: primaryImg,
-      // For desktop-only, don't fill mobile with desktop image (and vice-versa)
-      desktopImage: td === 'mobile' ? '' : (newSlide.desktopImage || primaryImg),
-      mobileImage: td === 'desktop' ? '' : (newSlide.mobileImage || primaryImg),
+      desktopImage: td === 'mobile' ? (newSlide.desktopImage || primaryImg) : (newSlide.desktopImage || primaryImg),
+      mobileImage: td === 'desktop' ? (newSlide.mobileImage || primaryImg) : (newSlide.mobileImage || primaryImg),
       targetDevice: td,
       title: newSlide.title || '',
       tagline: newSlide.tagline || '',
@@ -759,54 +761,93 @@ export const HomepageSectionsManager: React.FC = () => {
           </div>
 
           {/* Slide Cards Grid matching Hero Carousel */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {heroSlides
+          {(() => {
+            const filteredSlides = heroSlides
               .map((slide, globalIdx) => ({ slide, globalIdx }))
               .filter(({ slide }) => {
                 const target = slide.targetDevice || 'all';
                 if (heroFilterDevice === 'desktop') return target === 'desktop' || target === 'all';
                 if (heroFilterDevice === 'mobile') return target === 'mobile' || target === 'all';
                 return true;
-              })
-              .map(({ slide, globalIdx }) => {
-              const idx = globalIdx;
-              const isEditing = editingSlideId === slide.id;
-              const targetDevice = slide.targetDevice || 'all';
-              const currentMode = targetDevice === 'mobile' ? 'mobile' : (targetDevice === 'desktop' ? 'desktop' : (heroPreviewMode[slide.id] || 'desktop'));
-              const activePreviewImg = currentMode === 'mobile' 
-                ? (slide.mobileImage || slide.image)
-                : (slide.desktopImage || slide.image);
+              });
 
-              return (
-                <div
-                  key={slide.id}
-                  className="bg-white rounded-xl border border-[#EAE4D9] shadow-xs overflow-hidden flex flex-col"
-                >
-                  {/* Preview Mode Switcher Header */}
-                  <div className="px-4 py-2 bg-[#FAF8F3] border-b border-[#EAE4D9] flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#242120] flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#721B29]" />
-                        <span>Slide #{idx + 1}</span>
-                      </span>
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {filteredSlides.map(({ slide, globalIdx }, filterIdx) => {
+                  const isEditing = editingSlideId === slide.id;
+                  const targetDevice = slide.targetDevice || 'all';
+                  const currentMode = targetDevice === 'mobile' ? 'mobile' : (targetDevice === 'desktop' ? 'desktop' : (heroPreviewMode[slide.id] || 'desktop'));
+                  const rawPreviewImg = currentMode === 'mobile' 
+                    ? (slide.mobileImage || slide.image || slide.desktopImage)
+                    : (slide.desktopImage || slide.image || slide.mobileImage);
+                  const activePreviewImg = rawPreviewImg ? getOptimizedImageUrl(rawPreviewImg, 1440, 90) : '';
 
-                      {/* Device Target Badge */}
-                      {targetDevice === 'desktop' && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                          🖥️ PC Only
-                        </span>
-                      )}
-                      {targetDevice === 'mobile' && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          📱 Mobile Only
-                        </span>
-                      )}
-                      {targetDevice === 'all' && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-                          🌐 Both Views
-                        </span>
-                      )}
-                    </div>
+                  const canMoveUp = filterIdx > 0;
+                  const canMoveDown = filterIdx < filteredSlides.length - 1;
+                  const prevSlideId = canMoveUp ? filteredSlides[filterIdx - 1].slide.id : null;
+                  const nextSlideId = canMoveDown ? filteredSlides[filterIdx + 1].slide.id : null;
+
+                  return (
+                    <motion.div
+                      layout
+                      key={slide.id}
+                      transition={{
+                        layout: { duration: 0.25, ease: [0.25, 1, 0.5, 1] }
+                      }}
+                      className="bg-white rounded-xl border border-[#EAE4D9] shadow-xs overflow-hidden flex flex-col"
+                    >
+                      {/* Preview Mode Switcher Header */}
+                      <div className="px-4 py-2 bg-[#FAF8F3] border-b border-[#EAE4D9] flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#242120] flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[#721B29]" />
+                            <span>Slide #{globalIdx + 1}</span>
+                          </span>
+
+                          {/* Device Target Badge */}
+                          {targetDevice === 'desktop' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                              🖥️ PC Only
+                            </span>
+                          )}
+                          {targetDevice === 'mobile' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              📱 Mobile Only
+                            </span>
+                          )}
+                          {targetDevice === 'all' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                              🌐 Both Views
+                            </span>
+                          )}
+
+                          {/* Quick Move Up/Down in Header */}
+                          <div className="flex items-center bg-white border border-[#D9CEBF] rounded-md overflow-hidden ml-1">
+                            <button
+                              type="button"
+                              disabled={!canMoveUp}
+                              onClick={() => {
+                                if (prevSlideId) reorderHeroSlides(slide.id, prevSlideId);
+                              }}
+                              className="p-1 text-gray-600 hover:text-[#721B29] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                              title="Move Slide Earlier in sequence"
+                            >
+                              <MoveUp className="w-3 h-3" />
+                            </button>
+                            <div className="w-[1px] h-3 bg-[#EAE4D9]" />
+                            <button
+                              type="button"
+                              disabled={!canMoveDown}
+                              onClick={() => {
+                                if (nextSlideId) reorderHeroSlides(slide.id, nextSlideId);
+                              }}
+                              className="p-1 text-gray-600 hover:text-[#721B29] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                              title="Move Slide Later in sequence"
+                            >
+                              <MoveDown className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
 
                     {targetDevice === 'all' && (
                       <div className="flex items-center bg-white rounded-lg border border-[#D9CEBF] p-0.5">
@@ -847,6 +888,8 @@ export const HomepageSectionsManager: React.FC = () => {
                         src={activePreviewImg}
                         alt={slide.title || 'Store Banner'}
                         className="absolute inset-0 w-full h-full object-cover"
+                        loading="eager"
+                        decoding="sync"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -894,9 +937,36 @@ export const HomepageSectionsManager: React.FC = () => {
                   {/* Actions & Editable Form */}
                   <div className="p-4 bg-[#FAF8F3] border-t border-[#EAE4D9] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#242120] uppercase tracking-wider">
-                        Slide Settings
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[#242120] uppercase tracking-wider">
+                          Position #{globalIdx + 1}
+                        </span>
+                        <div className="flex items-center bg-white border border-[#D9CEBF] rounded-md overflow-hidden ml-1.5">
+                          <button
+                            type="button"
+                            disabled={!canMoveUp}
+                            onClick={() => {
+                              if (prevSlideId) reorderHeroSlides(slide.id, prevSlideId);
+                            }}
+                            className="p-1.5 text-gray-600 hover:text-[#721B29] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                            title="Move Slide Earlier"
+                          >
+                            <MoveUp className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-[1px] h-3.5 bg-[#EAE4D9]" />
+                          <button
+                            type="button"
+                            disabled={!canMoveDown}
+                            onClick={() => {
+                              if (nextSlideId) reorderHeroSlides(slide.id, nextSlideId);
+                            }}
+                            className="p-1.5 text-gray-600 hover:text-[#721B29] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                            title="Move Slide Later"
+                          >
+                            <MoveDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -910,7 +980,7 @@ export const HomepageSectionsManager: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`Delete slide #${idx + 1}?`)) {
+                            if (confirm(`Delete slide #${globalIdx + 1}?`)) {
                               deleteHeroSlide(slide.id);
                               showToast('Slide deleted');
                             }
@@ -1016,7 +1086,7 @@ export const HomepageSectionsManager: React.FC = () => {
                                 type="url"
                                 placeholder="https://... (Mobile Image URL)"
                                 value={slide.mobileImage || ''}
-                                onChange={(e) => updateHeroSlide(slide.id, { mobileImage: e.target.value })}
+                                onChange={(e) => updateHeroSlide(slide.id, { mobileImage: e.target.value, image: slide.image || e.target.value })}
                                 className="w-full px-2.5 py-1.5 bg-[#FAF8F3] border border-[#D9CEBF] rounded text-xs font-mono"
                               />
                               <button
@@ -1036,36 +1106,13 @@ export const HomepageSectionsManager: React.FC = () => {
                               folder="/hero-slides"
                               buttonText="Upload Mobile Image to ImageKit"
                               onUploadSuccess={(url) => {
-                                updateHeroSlide(slide.id, { mobileImage: url });
+                                updateHeroSlide(slide.id, { mobileImage: url, image: slide.image || url });
                                 showToast('Mobile Image uploaded!');
                               }}
                             />
                           </div>
                         )}
 
-                        {/* 3. Destination Category Link */}
-                        <div>
-                          <label className="block font-bold text-[#4A453E] uppercase text-[10px] mb-1">
-                            Destination Click Target / Category
-                          </label>
-                          <select
-                            value={slide.category}
-                            onChange={(e) => updateHeroSlide(slide.id, { category: e.target.value })}
-                            className="w-full px-3 py-1.5 bg-white border border-[#D9CEBF] rounded font-medium focus:outline-none focus:border-[#721B29]"
-                          >
-                            <option value="All">All Collections (Full Catalog)</option>
-                            <option value="New Arrivals">New Arrivals</option>
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.name}>
-                                {c.name}
-                              </option>
-                            ))}
-                            {slide.category &&
-                              !['All', 'New Arrivals', ...categories.map((c) => c.name)].includes(slide.category) && (
-                                <option value={slide.category}>{slide.category}</option>
-                              )}
-                          </select>
-                        </div>
 
                         {/* 4. Text Overlay Toggle & Optional Text Fields */}
                         <div className="p-3 bg-white rounded-lg border border-[#EAE4D9] space-y-3">
@@ -1137,12 +1184,14 @@ export const HomepageSectionsManager: React.FC = () => {
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
-        </div>
-      )}
+        );
+      })()}
+    </div>
+  )}
 
       {/* TAB 4: SHOP BY BUDGET EDIT CARDS */}
       {activeTab === 'budget' && (
@@ -1837,7 +1886,7 @@ export const HomepageSectionsManager: React.FC = () => {
                       type="url"
                       placeholder="https://... (Mobile Banner URL)"
                       value={newSlide.mobileImage}
-                      onChange={(e) => setNewSlide({ ...newSlide, mobileImage: e.target.value })}
+                      onChange={(e) => setNewSlide({ ...newSlide, mobileImage: e.target.value, image: newSlide.image || e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-[#D9CEBF] rounded text-xs font-mono"
                     />
                     <button
@@ -1856,32 +1905,13 @@ export const HomepageSectionsManager: React.FC = () => {
                     folder="/hero-slides"
                     buttonText="Upload Mobile Banner to ImageKit"
                     onUploadSuccess={(url) => {
-                      setNewSlide((prev) => ({ ...prev, mobileImage: url }));
+                      setNewSlide((prev) => ({ ...prev, mobileImage: url, image: prev.image || url }));
                       showToast('Mobile Banner uploaded!');
                     }}
                   />
                 </div>
               )}
 
-              {/* 3. Category Target */}
-              <div>
-                <label className="block font-bold uppercase text-[10px] text-[#4A453E] mb-1">
-                  Destination Target Category Link
-                </label>
-                <select
-                  value={newSlide.category}
-                  onChange={(e) => setNewSlide({ ...newSlide, category: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-[#D9CEBF] rounded font-medium focus:outline-none focus:border-[#721B29]"
-                >
-                  <option value="All">All Collections (Full Catalog)</option>
-                  <option value="New Arrivals">New Arrivals</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
               {/* 4. Text Overlay Toggle */}
               <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#EAE4D9] space-y-2">
